@@ -11,7 +11,11 @@ def create_deck
 			face.map! do |x|
 				x+= suite
 				# below try making [x.to_s] to make an array with x as a string at index 1
-				x = [x, ["|", "\u203E" *8, "|"], ["|#{x}"," "*6, "|"],["|", " "*8, "|"],["|", " "*6, "#{x}|"], ["|", "_"*8, "|"]]
+				if x.length == 2
+					x = [x, ["|", "\u203E" *8, "|"], ["|#{x}"," "*6, "|"],["|", " "*8, "|"],["|", " "*6, "#{x}|"], ["|", "_"*8, "|"]]
+				elsif x.length == 3	
+					x = [x, ["|", "\u203E" *8, "|"], ["|#{x}"," "*5, "|"],["|", " "*8, "|"],["|", " "*5, "#{x}|"], ["|", "_"*8, "|"]]
+				end
 			  end			
 			face
 		end
@@ -19,6 +23,7 @@ def create_deck
 	diamonds = make_suite("\u2666")
 	spades = make_suite("\u2660")
 	clubs = make_suite("\u2663")
+	# just concat the make_suite method with each unicode character
 	res.concat(hearts)
 	res.concat(diamonds)
 	res.concat(spades)
@@ -31,8 +36,10 @@ def print_cards(deck)
 	print "\n"
 	deck.each {|card| card[2].each {|x| print x }}
 	print "\n"
-	deck.each {|card| card[3].each {|x| print x }}
-	print "\n"
+	2.times do 
+		deck.each {|card| card[3].each {|x| print x }}
+		print "\n"
+	end
 	deck.each {|card| card[4].each {|x| print x }}
 	print "\n"
 	deck.each {|card| card[5].each {|x| print x }}

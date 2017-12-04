@@ -9,25 +9,35 @@ class Game
 	end
 		
 	def create_deck
-		res = []
+	res = []
 		def make_suite(suite)
 			non_face = [*2..10]
+			
 			non_face.map! {|x| x.to_s }
 			face = ["A","J","Q","K"]
 			face.concat(non_face)
 			face.map! do |x|
 				x+= suite
+				# below try making [x.to_s] to make an array with x as a string at index 1
+				if x.length == 2
+					x = [x, ["|", "\u203E" *8, "|"], ["|#{x}"," "*6, "|"],["|", " "*8, "|"],["|", " "*6, "#{x}|"], ["|", "_"*8, "|"]]
+				elsif x.length == 3	
+					x = [x, ["|", "\u203E" *8, "|"], ["|#{x}"," "*5, "|"],["|", " "*8, "|"],["|", " "*5, "#{x}|"], ["|", "_"*8, "|"]]
+				end
 			  end			
 			face
 		end
-		hearts = make_suite("\u2665")
-		diamonds = make_suite("\u2666")
-		spades = make_suite("\u2660")
-		clubs = make_suite("\u2663")
-		res.push(hearts, diamonds, spades, clubs)
-		res.flatten!
-		res.shuffle
-	end
+	hearts = make_suite("\u2665")
+	diamonds = make_suite("\u2666")
+	spades = make_suite("\u2660")
+	clubs = make_suite("\u2663")
+	# just concat the make_suite method with each unicode character
+	res.concat(hearts)
+	res.concat(diamonds)
+	res.concat(spades)
+	res.concat(clubs)
+	res.shuffle
+end
 
 	def add_player(name)
 		name = Player.new(name)
@@ -290,34 +300,49 @@ class Player
 	end
 
 	def print_card(denom)
-		if denom.length == 2			
-			print "|" +("\u203E"*8)+"|\n"
-			print "|#{denom}" + (" "*6)+ "|\n" 
-			4.times {print "|"+ (" "*8) + "|\n"}
-			print "|" + (" "*6)+ "#{denom}|\n" 
-			print "|" + ("_"*8)+ "|\n"
+		denom[1].each {|x| print x }
+		print "\n"
+		denom[2].each {|x| print x }
+		print "\n"
+		2.times do 
+			denom[3].each {|x| print x }
+			print "\n"
 		end
-		if denom.length == 3
-			print "|" +("\u203E"*8)+"|\n"
-			print "|#{denom}" + (" "*5)+ "|\n" 
-			4.times {print "|"+ (" "*8) + "|\n"}
-			print "|" + (" "*5)+ "#{denom}|\n" 
-			print "|" + ("_"*8)+ "|\n"
-		end
+		denom[4].each {|x| print x }
+		print "\n"
+		denom[5].each {|x| print x }
+		print "\n"
 	end
+
+	#def print_hand
+	#	puts @type + "\n"
+	#	@hand.each {|x| print_card(x)}
+	#	print "\n" + @sum.to_s + "\n"
+	#end
 
 	def print_hand
-		puts @type + "\n"
-		@hand.each {|x| print_card(x)}
-		print "\n" + @sum.to_s + "\n"
+		puts @type
+		@hand.each {|card| card[1].each {|x| print x }}
+		print "\n"
+		@hand.each {|card| card[2].each {|x| print x }}
+		print "\n"
+		2.times do 
+			@hand.each {|card| card[3].each {|x| print x }}
+			print "\n"
+		end
+		@hand.each {|card| card[4].each {|x| print x }}
+		print "\n"
+		@hand.each {|card| card[5].each {|x| print x }}
+		print "\n"
+		puts @sum.to_s
 	end
-
+	
 	def check_hand 
 		face = ["A","J","Q","K"]
 		sum = 0
 		@black_jack = false
 		@hand.each do |card|
-			card = card[0..-2]
+			card = card[0][0..-2]
 			if face.include?(card)
 				if card == "A"
 					sum += 11
@@ -333,7 +358,7 @@ class Player
 		if sum > 21
 			@bust = true
 		elsif sum == 21 && @hand.length == 2
-			puts "BlackJack!"
+			print "BlackJack! "
 			@black_jack = true
 			@bust = false
 		else
@@ -346,7 +371,7 @@ class Player
 		#go through hand to see if sum is greater than 21, if true check if any aces and re-evaluate with Ace == 1
 		if sum > 21
 			hand.each do |card|
-				card = card[0..-2]
+				card = card[0][0..-2]
 				if card == "A"
 					sum -= 10
 				end
