@@ -1,44 +1,57 @@
+require './Hand'
+
 class Player
-  attr_reader :type, :bust, :sum, :black_jack
+  attr_reader :type, :bust, :sum, :black_jack, :name
   attr_accessor :hand, :purse, :bet
 
-  def initialize type
-    @hand = []
-    @type = type
+  def initialize(name)
+    @hand = Hand.new 
+    @name = name
     @purse = 100
     @black_jack = false
   end
 
-  def print_card(denom)
-    denom[1].each {|x| print x }
-    print "\n"
-    denom[2].each {|x| print x }
-    print "\n"
-    2.times do
-      denom[3].each {|x| print x }
-      print "\n"
-    end
-    denom[4].each {|x| print x }
-    print "\n"
-    denom[5].each {|x| print x }
-    print "\n"
+  def bet(amount)
+    if amount <= @purse
+      @purse -= amount
+      @bet = amount.round(2)
+    else
+     "you don't got the dough"
+    end 
   end
 
+#  def print_card(denom) Not a necesseary method or actually it is bc dealer shows 1 
+#    denom[1].each {|x| print x }
+#    print "\n"
+#    denom[2].each {|x| print x #}
+#    print "\n"
+#    2.times do
+#      denom[3].each {|x| print x }
+#      print "\n"
+#    end
+#    denom[4].each {|x| print x }
+#    print "\n"
+#    denom[5].each {|x| print x }
+#    print "\n"
+#  end
+
   def print_hand
-    puts @type
-    @hand.each {|card| card[1].each {|x| print x }}
-    print "\n"
-    @hand.each {|card| card[2].each {|x| print x }}
-    print "\n"
-    2.times do
-      @hand.each {|card| card[3].each {|x| print x }}
-      print "\n"
-    end
-    @hand.each {|card| card[4].each {|x| print x }}
-    print "\n"
-    @hand.each {|card| card[5].each {|x| print x }}
-    print "\n"
-    puts @sum.to_s
+    @hand.display.each {|line| puts line}
+
+#    puts @type
+#   @hand.each {|card| card[1].each {|x| print x }}
+#    print "\n"
+#    @hand.each {|card| card[2].each {|x| print x }}
+#    print "\n"
+#    2.times 
+#      @hand.each {|card| card[3].each {|x| print x }}
+#      print "\n"
+#    end
+#    @hand.each {|card| card[4].each {|x| print x }}
+#    print "\n"
+#    @hand.each {|card| card[5].each {|x| print x }}
+#    print "\n"
+    puts @hand.points
   end
 
   def check_hand

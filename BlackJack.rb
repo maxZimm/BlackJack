@@ -1,28 +1,30 @@
 require './player'
+require './deck'
 
 
 class Game
   attr_reader :deck, :dealer, :players
 
   def initialize
-    @deck = create_deck
+    @deck = Deck.new   
     @dealer = Player.new "Dealer"
     @players = []
   end
 
   def create_deck
-    res = []
+    @deck.make_deck
+#    res = []
 
-    hearts = make_suite("\u2665")
-    diamonds = make_suite("\u2666")
-    spades = make_suite("\u2660")
-    clubs = make_suite("\u2663")
+#    hearts = make_suite("\u2665")
+#    diamonds = make_suite("\u2666")
+#    spades = make_suite("\u2660")
+#    clubs = make_suite("\u2663")
     # just concat the make_suite method with each unicode character
-    res.concat(hearts)
-    res.concat(diamonds)
-    res.concat(spades)
-    res.concat(clubs)
-    res.shuffle
+#    res.concat(hearts)
+#    res.concat(diamonds)
+#    res.concat(spades)
+#    res.concat(clubs)
+#    res.shuffle
   end
 
   def make_suite(suite)
@@ -49,11 +51,12 @@ class Game
   end
 
   def deal_card(player)
-    player.hand.push(@deck.pop)
+    player.hand.hit(@deck.stack.pop)
   end
 
   def player_menu
-    # will prompt user to input a name which will be used to instantiate Player class
+    # will prompt user to input a name which will be used to instantiate Player class, specifics of this can probably
+    # be moved to Player class itself as an instance method
     clear_scrn
     print "Add a player: "
     inp = gets.chomp
@@ -77,7 +80,7 @@ class Game
 
   def player_bet(player)
     clear_scrn
-    puts "#{player.type} place bet, you have $#{player.purse}"
+    puts "#{player.name} place bet, you have $#{player.purse}"
     amnt = gets.chomp
     if amnt =~ /\A\d*\.*\d*\Z/
       if amnt.to_f <= player.purse
@@ -201,11 +204,11 @@ class Game
     else
       print "Winners!: "
       if winners
-        winners.each {|x| print x.type + ", " }
+        winners.each {|x| print x.name + ", " }
       end
       print "\nPush: "
       if even
-        even.each {|x| print x.type + ", "}
+        even.each {|x| print x.name + ", "}
       end
     end
     @dealer.hand.clear
