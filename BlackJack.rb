@@ -2,47 +2,36 @@ require './player'
 require './deck'
 
 
-class Game
+class BlackJack 
   attr_reader :deck, :dealer, :players
 
   def initialize
     @deck = Deck.new   
-    @dealer = Player.new "Dealer"
+    @dealer = Player.new("Dealer")
     @players = []
   end
 
-  def create_deck
-    @deck.make_deck
-#    res = []
-
-#    hearts = make_suite("\u2665")
-#    diamonds = make_suite("\u2666")
-#    spades = make_suite("\u2660")
-#    clubs = make_suite("\u2663")
-    # just concat the make_suite method with each unicode character
-#    res.concat(hearts)
-#    res.concat(diamonds)
-#    res.concat(spades)
-#    res.concat(clubs)
-#    res.shuffle
-  end
-
-  def make_suite(suite)
-    non_face = [*2..10]
-
-    non_face.map! {|x| x.to_s }
-    face = ["A","J","Q","K"]
-    face.concat(non_face)
-    face.map! do |x|
-      x+= suite
-      # below try making [x.to_s] to make an array with x as a string at index 1
-      if x.length == 2
-        x = [x, ["|", "\u203E" *8, "|"], ["|#{x}"," "*6, "|"],["|", " "*8, "|"],["|", " "*6, "#{x}|"], ["|", "_"*8, "|"]]
-      elsif x.length == 3
-        x = [x, ["|", "\u203E" *8, "|"], ["|#{x}"," "*5, "|"],["|", " "*8, "|"],["|", " "*5, "#{x}|"], ["|", "_"*8, "|"]]
+  def game_run
+    player_menu
+    while true
+      if !any_money
+        if play_again
+          break
+        else
+          game_run
+        end
+      end
+      round
+      if play_again
+        break
       end
     end
-    face
+  end
+  
+  private
+
+  def create_deck
+    @deck.make_deck
   end
 
   def add_player(name)
@@ -55,8 +44,6 @@ class Game
   end
 
   def player_menu
-    # will prompt user to input a name which will be used to instantiate Player class, specifics of this can probably
-    # be moved to Player class itself as an instance method
     clear_scrn
     print "Add a player: "
     inp = gets.chomp
@@ -71,37 +58,35 @@ class Game
   def deal_in
     2.times {deal_card(@dealer)}
     2.times do
-      @players.each {|x| deal_card(x)}
+      @players.each {|player| deal_card(player)}
     end
     puts "Dealer: "
-    @dealer.print_card(@dealer.hand[0])
+    puts @dealer.hand.cards[0].print_card
     sleep(2)
   end
 
-  def player_bet(player)
+  def collect_bet(player)
     clear_scrn
     puts "#{player.name} place bet, you have $#{player.purse}"
-    amnt = gets.chomp
-    if amnt =~ /\A\d*\.*\d*\Z/
-      if amnt.to_f <= player.purse
-        player.bet = amnt.to_f.round(2)
-      else
-        puts "you don't got the dough"
-        sleep(1.5)
-        player_bet(player)
-      end
-    else
+    amount = gets.chomp
+    if amount =~ /\A\d*\.*\d*\Z/ && amount.to_f <= player.purse
+      player.bet(amount.to_f.round(2))
+    elsif amount !~ /\A\d*\.*\d*\Z/
       puts "Need a number only"
       sleep(1.5)
-      player_bet(player)
+      collect_bet(player)
+    else
+      puts "you don't got the dough"
+      sleep(1.5)
+      collect_bet(player)
     end
   end
 
   def dealer_hand
     clear_scrn
-    @dealer.check_hand
+    #@dealer.check_hand
     @dealer.print_hand
-    if @dealer.sum < 17
+    if @dealer.hand.points < 17
       sleep(1.15)
       deal_card(@dealer)
       dealer_hand
@@ -110,13 +95,13 @@ class Game
     @dealer.print_hand
   end
 
+# this logic has moved to player class
   def player_turn(player)
     clear_scrn
-    check_deck
-    player.check_hand
-    if !player.bust
+    #player.move      
+    if !player.hand.bust
       player.print_hand
-      if player.hand.length == 2
+      if player.hand.cards.length == 2
         print "\nYour action [S]tand, [H]it, [D]ouble down?: "
       else
         print "\nYour action [S]tand, [H]it: "
@@ -126,13 +111,13 @@ class Game
         nil
       elsif resp == "h"
         deal_card(player)
-        player.check_hand
+        #player.check_hand
         player.print_hand
         player_turn(player)
       elsif resp == "d" && player.hand.length == 2
-        player.bet = player.bet*2
+        player.betted = player.betted * 2
         deal_card(player)
-        player.check_hand
+        #player.check_hand
         clear_scrn
         player.print_hand
         sleep(1.5)
@@ -150,51 +135,51 @@ class Game
 
   def payout(group)
     group.each do |x|
-      if x.black_jack
-        x.purse += (x.bet * 2.5)
+      if x.hand.blackjack?
+        x.purse += (x.betted * 2.5)
       else
-        x.purse += (x.bet * 2)
+        x.purse += (x.betted * 2)
       end
       x.purse = x.purse.to_f.round(2)
-      x.bet = 0
+      x.betted = 0
     end
   end
 
   def end_round
-    if !@dealer.bust && !@dealer.black_jack
-      winners = @players.find_all {|player|  (!player.bust && player.sum > @dealer.sum && player.purse >0) || player.black_jack }
+    if @dealer.hand.bust && !@dealer.hand.blackjack?
+      winners = @players.find_all {|player|  (!player.hand.bust && player.hand.points > @dealer.hand.points && player.purse >0) || player.hand.blackjack? }
       payout(winners)
 
-      even = @players.find_all {|player| player.sum == @dealer.sum && !player.black_jack}
+      even = @players.find_all {|player| player.hand.points == @dealer.hand.points && !player.hand.blackjack?}
       even.each do |x|
-        x.bet = 0
+        x.betted = 0
         x.purse = x.purse.to_f.round(2)
       end
-      losers = @players.find_all {|player| player.bust || player.sum < @dealer.sum}
+      losers = @players.find_all {|player| player.hand.bust || player.hand.points < @dealer.hand.points}
       losers.each do |x|
-        x.purse -= x.bet
+        x.purse -= x.betted
         x.purse = x.purse.to_f.round(2)
-        x.bet = 0
+        x.betted = 0
       end
-    elsif @dealer.black_jack
-      even = @players.find_all {|player| player.black_jack}
+    elsif @dealer.hand.blackjack?
+      even = @players.find_all {|player| player.hand.blackjack?}
       even.each do |x|
-        x.bet = 0
+        x.betted = 0
         x.purse = x.purse.to_f.round(2)
       end
       winners = []
-      losers = @players.find_all {|player| player.bust || !player.black_jack}
+      losers = @players.find_all {|player| player.hand.bust || !player.hand.blackjack?}
       losers.each do |x|
-        x.purse -= x.bet
+        x.purse -= x.betted
         x.purse = x.purse.to_f.round(2)
       end
     else
-      winners = @players.find_all {|player| !player.bust && player.purse > 0}
+      winners = @players.find_all {|player| !player.hand.bust && player.purse > 0}
       payout(winners)
       even = []
-      losers = @players.find_all {|player| player.bust}
+      losers = @players.find_all {|player| player.hand.bust}
       losers.each do |x|
-        x.purse -= x.bet
+        x.purse -= x.betted
         x.purse = x.purse.to_f.round(2)
       end
     end
@@ -247,26 +232,10 @@ class Game
     end
   end
 
-  def game_run
-    player_menu
-    while true
-      if !any_money
-        if play_again
-          break
-        else
-          game_run
-        end
-      end
-      round
-      if play_again
-        break
-      end
-    end
-  end
 
   def check_deck
-    if @deck.length <= ((@players.length + 1)*2)
-      @deck.concat(create_deck)
+    if @deck.stack.length <= ((@players.length + 1)*2)
+      @deck.make_deck
     end
   end
 
@@ -279,7 +248,7 @@ class Game
     check_deck
     @players.each do |player|
       if player.purse > 0
-        player_bet(player)
+        collect_bet(player)
       else
         next
       end
@@ -291,11 +260,10 @@ class Game
         player_turn(player)
       end
     end
-    # Add to bet? done
     dealer_hand
     end_round
   end
 end
 
-h=Game.new
+h = BlackJack.new
 h.game_run

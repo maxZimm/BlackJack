@@ -1,8 +1,8 @@
 require './Hand'
 
 class Player
-  attr_reader :type, :bust, :sum, :black_jack, :name
-  attr_accessor :hand, :purse, :bet
+  attr_reader  :name
+  attr_accessor :hand, :purse, :betted
 
   def initialize(name)
     @hand = Hand.new 
@@ -12,88 +12,29 @@ class Player
   end
 
   def bet(amount)
-    if amount <= @purse
-      @purse -= amount
-      @bet = amount.round(2)
-    else
-     "you don't got the dough"
-    end 
+      @betted = amount
   end
-
-#  def print_card(denom) Not a necesseary method or actually it is bc dealer shows 1 
-#    denom[1].each {|x| print x }
-#    print "\n"
-#    denom[2].each {|x| print x #}
-#    print "\n"
-#    2.times do
-#      denom[3].each {|x| print x }
-#      print "\n"
-#    end
-#    denom[4].each {|x| print x }
-#    print "\n"
-#    denom[5].each {|x| print x }
-#    print "\n"
-#  end
 
   def print_hand
     @hand.display.each {|line| puts line}
-
-#    puts @type
-#   @hand.each {|card| card[1].each {|x| print x }}
-#    print "\n"
-#    @hand.each {|card| card[2].each {|x| print x }}
-#    print "\n"
-#    2.times 
-#      @hand.each {|card| card[3].each {|x| print x }}
-#      print "\n"
-#    end
-#    @hand.each {|card| card[4].each {|x| print x }}
-#    print "\n"
-#    @hand.each {|card| card[5].each {|x| print x }}
-#    print "\n"
     puts @hand.points
   end
 
-  def check_hand
-    face = ["A","J","Q","K"]
-    sum = 0
-    @black_jack = false
-    @hand.each do |card|
-      card = card[0][0..-2]
-      if face.include?(card)
-        if card == "A"
-          sum += 11
-        else
-          sum += 10
-        end
-      else
-        sum += card.to_i
-      end
-    end
-
-    sum = check_sum(@hand, sum)
-    if sum > 21
-      @bust = true
-    elsif sum == 21 && @hand.length == 2
-      print "BlackJack! "
-      @black_jack = true
-      @bust = false
+  def move
+    if @hand.cards.length == 2
+      print "\nYour action [S]tand, [H]it, [D]ouble down?: "
     else
-      @bust = false
+      print "\nYour action [S]tand, [H]it: "
     end
-    @sum = sum
-  end
-
-  def check_sum(hand, sum)
-    #go through hand to see if sum is greater than 21, if true check if any aces and re-evaluate with Ace == 1
-    if sum > 21
-      hand.each do |card|
-        card = card[0][0..-2]
-        if card == "A"
-          sum -= 10
-        end
-      end
+    resp = gets.chomp.downcase
+    if ['s', 'h', 'd'].include?(resp) && @hand.cards.length == 2
+      return resp
+    elsif ['s', 'h'].include?(resp)  && @hand.cards.length > 2
+      return resp
+    else
+      print "Not recognized try again" 
+      sleep(1.5)
+      move 
     end
-    sum
   end
 end

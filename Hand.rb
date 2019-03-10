@@ -1,5 +1,7 @@
 
 class Hand
+  attr_reader :cards
+
   def initialize()
     @cards = [] 
   end
@@ -31,8 +33,16 @@ class Hand
     points > 21
   end
 
+  def blackjack?
+    points == 21 && @cards.length == 2
+  end
+
   def hit(card)
     @cards << card
+  end
+
+  def clear
+    @cards = []
   end
   
   private 
