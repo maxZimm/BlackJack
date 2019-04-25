@@ -1,5 +1,5 @@
-require './player'
-require './deck'
+require './Player'
+require './Deck'
 
 
 class BlackJack 
@@ -114,7 +114,7 @@ class BlackJack
         #player.check_hand
         player.print_hand
         player_turn(player)
-      elsif resp == "d" && player.hand.length == 2
+      elsif resp == "d" && player.hand.cards.length == 2
         player.betted = player.betted * 2
         deal_card(player)
         #player.check_hand
@@ -146,7 +146,7 @@ class BlackJack
   end
 
   def end_round
-    if @dealer.hand.bust && !@dealer.hand.blackjack?
+    if !@dealer.hand.bust && !@dealer.hand.blackjack?
       winners = @players.find_all {|player|  (!player.hand.bust && player.hand.points > @dealer.hand.points && player.purse >0) || player.hand.blackjack? }
       payout(winners)
 
@@ -174,10 +174,11 @@ class BlackJack
         x.purse = x.purse.to_f.round(2)
       end
     else
+      winners = []
       winners = @players.find_all {|player| !player.hand.bust && player.purse > 0}
+      losers = @players.find_all {|player| player.hand.bust}
       payout(winners)
       even = []
-      losers = @players.find_all {|player| player.hand.bust}
       losers.each do |x|
         x.purse -= x.betted
         x.purse = x.purse.to_f.round(2)

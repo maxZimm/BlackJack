@@ -8,7 +8,6 @@ class Player
     @hand = Hand.new 
     @name = name
     @purse = 100
-    @black_jack = false
   end
 
   def bet(amount)

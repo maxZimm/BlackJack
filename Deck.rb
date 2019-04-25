@@ -12,7 +12,7 @@ class Deck
     make_suite(:clubs)
     make_suite(:diamonds)
     make_suite(:spades)
-    @stack.shuffle
+    @stack.shuffle!
   end
   
   private
