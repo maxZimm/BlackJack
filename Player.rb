@@ -18,6 +18,10 @@ class Player
     @hand.display.each {|line| puts line}
     puts @hand.points
   end
+  
+  def reset_bet
+    @betted = 0
+  end 
 
   def move
     if @hand.cards.length == 2

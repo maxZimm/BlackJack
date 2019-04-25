@@ -84,7 +84,6 @@ class BlackJack
 
   def dealer_hand
     clear_scrn
-    #@dealer.check_hand
     @dealer.print_hand
     if @dealer.hand.points < 17
       sleep(1.15)
@@ -141,30 +140,31 @@ class BlackJack
         x.purse += (x.betted * 2)
       end
       x.purse = x.purse.to_f.round(2)
-      x.betted = 0
+      x.reset_bet
     end
   end
 
   def end_round
+#Seperate groups of players into winnerrs, losers, evens
+#Reslove each groups bets
+#Show results to user
+#Clean up the table :
     if !@dealer.hand.bust && !@dealer.hand.blackjack?
       winners = @players.find_all {|player|  (!player.hand.bust && player.hand.points > @dealer.hand.points && player.purse >0) || player.hand.blackjack? }
       payout(winners)
 
-      even = @players.find_all {|player| player.hand.points == @dealer.hand.points && !player.hand.blackjack?}
+      even = @players.find_all {|player| player.hand.points == @dealer.hand.points && !player.hand.blackjack?} # What are we being even with?
       even.each do |x|
-        x.betted = 0
         x.purse = x.purse.to_f.round(2)
       end
       losers = @players.find_all {|player| player.hand.bust || player.hand.points < @dealer.hand.points}
       losers.each do |x|
         x.purse -= x.betted
         x.purse = x.purse.to_f.round(2)
-        x.betted = 0
       end
     elsif @dealer.hand.blackjack?
       even = @players.find_all {|player| player.hand.blackjack?}
       even.each do |x|
-        x.betted = 0
         x.purse = x.purse.to_f.round(2)
       end
       winners = []
@@ -200,6 +200,7 @@ class BlackJack
     @dealer.hand.clear
     @players.each do |x|
       x.hand.clear
+      x.reset_bet
     end
   end
 
