@@ -1,6 +1,4 @@
-#require './blackjack_helper'
-require './Hand'
-require './Card'
+require_relative './blackjack_helper'
 require 'minitest/autorun'
 
 class HandTest < Minitest::Test

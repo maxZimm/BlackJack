@@ -1,6 +1,4 @@
-require './Player'
-require './Deck'
-
+require_relative 'blackjack_helper'
 
 class BlackJack 
   attr_reader :deck, :dealer, :players
@@ -94,7 +92,6 @@ class BlackJack
     @dealer.print_hand
   end
 
-# this logic has moved to player class
   def player_turn(player)
     clear_scrn
     #player.move      
@@ -110,13 +107,11 @@ class BlackJack
         nil
       elsif resp == "h"
         deal_card(player)
-        #player.check_hand
         player.print_hand
         player_turn(player)
       elsif resp == "d" && player.hand.cards.length == 2
         player.betted = player.betted * 2
         deal_card(player)
-        #player.check_hand
         clear_scrn
         player.print_hand
         sleep(1.5)
@@ -133,74 +128,76 @@ class BlackJack
   end
 
   def payout(group)
-    group.each do |x|
-      if x.hand.blackjack?
-        x.purse += (x.betted * 2.5)
+    group.each do |player|
+      if player.hand.blackjack?
+        player.purse += (player.betted * 2.5)
       else
-        x.purse += (x.betted * 2)
+        player.purse += (player.betted * 2)
       end
-      x.purse = x.purse.to_f.round(2)
-      x.reset_bet
     end
   end
 
   def end_round
-#Seperate groups of players into winnerrs, losers, evens
-#Reslove each groups bets
-#Show results to user
-#Clean up the table :
-    if !@dealer.hand.bust && !@dealer.hand.blackjack?
-      winners = @players.find_all {|player|  (!player.hand.bust && player.hand.points > @dealer.hand.points && player.purse >0) || player.hand.blackjack? }
-      payout(winners)
+    payout(winners)
+    resolve_losers(losers)
+    round_results 
+    clear_all_hands
+  end
 
-      even = @players.find_all {|player| player.hand.points == @dealer.hand.points && !player.hand.blackjack?} # What are we being even with?
-      even.each do |x|
-        x.purse = x.purse.to_f.round(2)
-      end
-      losers = @players.find_all {|player| player.hand.bust || player.hand.points < @dealer.hand.points}
-      losers.each do |x|
-        x.purse -= x.betted
-        x.purse = x.purse.to_f.round(2)
-      end
-    elsif @dealer.hand.blackjack?
-      even = @players.find_all {|player| player.hand.blackjack?}
-      even.each do |x|
-        x.purse = x.purse.to_f.round(2)
-      end
-      winners = []
-      losers = @players.find_all {|player| player.hand.bust || !player.hand.blackjack?}
-      losers.each do |x|
-        x.purse -= x.betted
-        x.purse = x.purse.to_f.round(2)
-      end
-    else
-      winners = []
-      winners = @players.find_all {|player| !player.hand.bust && player.purse > 0}
-      losers = @players.find_all {|player| player.hand.bust}
-      payout(winners)
-      even = []
-      losers.each do |x|
-        x.purse -= x.betted
-        x.purse = x.purse.to_f.round(2)
-      end
+  def winners
+    if @dealer.hand.bust
+      @players.find_all {|player| !player.hand.bust }
+    else 
+      @players.find_all {|player| !player.hand.bust && (player.hand.points > @dealer.hand.points)}
     end
+  end
 
-    if winners.length == 0  && even.length == 0
+  def resolve_losers(players)
+    if players.any?
+      players.each {|player| player.purse -= player.betted } 
+    end 
+  end
+
+  def losers
+    if @dealer.hand.bust
+      @players.find_all {|player| player.hand.bust}
+    else
+      @players.find_all {|player| player.hand.points < @dealer.hand.points || player.hand.bust }
+    end
+  end
+
+  def evens
+    if !@dealer.hand.bust
+      @players.find_all {|player| player.hand.points == @dealer.hand.points}
+    else
+      []
+    end
+  end
+  
+  def round_purse(player)
+     player.purse = player.purse.to_f.round(2)
+  end
+
+  def clear_all_hands
+    @dealer.hand.clear
+    @players.each do |player|
+      player.hand.clear
+      player.reset_bet
+    end
+  end
+
+  def round_results
+    if winners.length == 0  && evens.length == 0
       puts "House Wins"
     else
       print "Winners!: "
-      if winners
-        winners.each {|x| print x.name + ", " }
+      if winners.any?
+        winners.each {|winner| print winner.name + " " }
       end
       print "\nPush: "
-      if even
-        even.each {|x| print x.name + ", "}
+      if evens.any?
+        evens.each {|even| print even.name + " "}
       end
-    end
-    @dealer.hand.clear
-    @players.each do |x|
-      x.hand.clear
-      x.reset_bet
     end
   end
 
@@ -218,9 +215,12 @@ class BlackJack
     end
   end
 
+  def able_players
+    @players.find_all {|player| player.purse > 0}
+  end
+
   def any_money
-    able = @players.find_all {|x| x.purse > 0}
-    if able.length == 0
+    if able_players.length == 0
       clear_scrn
       puts "Game Over"
       sleep(1.25)
@@ -233,7 +233,6 @@ class BlackJack
       true
     end
   end
-
 
   def check_deck
     if @deck.stack.length <= ((@players.length + 1)*2)
@@ -248,20 +247,10 @@ class BlackJack
   def round
     clear_scrn
     check_deck
-    @players.each do |player|
-      if player.purse > 0
-        collect_bet(player)
-      else
-        next
-      end
-    end
+    able_players.each {|player| collect_bet(player)}
     clear_scrn
     deal_in
-    @players.each do|player|
-      if player.purse > 0
-        player_turn(player)
-      end
-    end
+    able_players.each {|player| player_turn(player)}
     dealer_hand
     end_round
   end
